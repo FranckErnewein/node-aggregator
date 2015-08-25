@@ -1,0 +1,11 @@
+{
+  "name": "aggregator",
+  "version": "1.0.0",
+  "description": "",
+  "main": "index.js",
+  "scripts": {
+    "test": "mocha test.js"
+  },
+  "author": "Franck Ernewein",
+  "license": "ISC"
+}
