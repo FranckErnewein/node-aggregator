@@ -1,4 +1,11 @@
+var events = require('events');
+var util = require('util');
+
+util.inherits(Aggregator, events.EventEmitter);
+
 function Aggregator(aggregator, initial_value) {
+  events.EventEmitter.call(this);
+
   if (typeof aggregator !== 'function') {
     throw new Error('aggregator is not a function');
   }
@@ -23,23 +30,22 @@ function Aggregator(aggregator, initial_value) {
 
   if (typeof initial_value === 'function') {
     if (initial_value.length === 0) {
-      this._aggregated = initial_value();
-      this._ready = true;
+      _init.call(this, initial_value());
     } else {
       //aync init
-      initial_value(_async_init.bind(this));
+      initial_value(_init.bind(this));
     }
   } else {
-    this._aggregated = initial_value;
-    this._ready = true;
+    _init.call(this, initial_value);
   }
 }
 
 
-function _async_init(val) {
+function _init(val) {
   this._aggregated = val;
   this._ready = true;
   _unstack_buffer.call(this);
+  this.emit('ready', this.get());
 }
 
 function _unstack_buffer() {

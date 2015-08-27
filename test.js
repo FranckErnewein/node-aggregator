@@ -72,11 +72,11 @@ describe('Aggregator', function() {
         cb(42);
       }, 10);
     });
-    setTimeout(function() {
+    async_init.once('ready', function() {
       expect(async_init._ready).to.be.equal(true);
       expect(async_init.get()).to.be.equal(42);
       done();
-    }, 20);
+    });
   });
 
   it('should bufferise some value before initializing', function(done) {
