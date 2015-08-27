@@ -67,12 +67,13 @@ describe('Aggregator', function() {
   });
 
   it('should be initialize with an asynchronous function', function(done) {
-    var async_init = new Aggregator(function() {}, function(done) {
+    var async_init = new Aggregator(lambda, function(cb) {
       setTimeout(function() {
-        done(42);
+        cb(42);
       }, 10);
     });
     setTimeout(function() {
+      expect(async_init._ready).to.be.equal(true);
       expect(async_init.get()).to.be.equal(42);
       done();
     }, 20);
@@ -139,7 +140,7 @@ describe('Aggregator', function() {
     async.add(2);
     expect(async.get()).to.be.equal(0);
     expect(async._buffer).to.has.length(1);
-    setTimeout(function(){
+    setTimeout(function() {
       expect(async.get()).to.be.equal(3);
       expect(async._buffer).to.has.length(0);
       done();
