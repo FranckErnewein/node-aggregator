@@ -106,11 +106,15 @@ describe('Aggregator', function() {
     });
     bufferized.add(1);
     bufferized.add(2);
-    setTimeout(function() {
-      expect(bufferized.get()).to.be.equal(3); //check aggregation
-      expect(bufferized._buffer).to.has.length(0); //check buffer is now empty
-      done();
-    }, 20);
+    bufferized.once('data', function() {
+      expect(bufferized.get()).to.be.equal(1);
+      expect(bufferized._buffer).to.has.length(1); //check buffer is now empty
+      bufferized.once('data', function() {
+        expect(bufferized.get()).to.be.equal(3); //check aggregation
+        expect(bufferized._buffer).to.has.length(0); //check buffer is now empty
+        done();
+      });
+    });
   });
 
   it('should aggregate with an async function', function(done) {
@@ -122,10 +126,10 @@ describe('Aggregator', function() {
 
     async.add(1);
     expect(async.get()).to.be.equal(0);
-    setTimeout(function() {
+    async.on('data', function() {
       expect(async.get()).to.be.equal(1);
       done();
-    }, 20);
+    });
   });
 
   it('should stack in buffer if add() called too fast', function(done) {
@@ -133,18 +137,22 @@ describe('Aggregator', function() {
     var async = new Aggregator(function(val, mem, cb) {
       setTimeout(function() {
         cb(mem + val);
-      }, 1);
+      }, 2);
     }, 0);
 
     async.add(1);
     async.add(2);
     expect(async.get()).to.be.equal(0);
     expect(async._buffer).to.has.length(1);
-    setTimeout(function() {
-      expect(async.get()).to.be.equal(3);
-      expect(async._buffer).to.has.length(0);
-      done();
-    }, 10);
+    async.once('data', function() {
+      expect(async.get()).to.be.equal(1);
+      expect(async._buffer).to.has.length(1);
+      async.once('data', function() {
+        expect(async.get()).to.be.equal(3);
+        expect(async._buffer).to.has.length(0);
+        done();
+      });
+    });
   });
 
 });
