@@ -12,9 +12,17 @@ function Aggregator(aggregator, initial_value) {
 
   this._buffer = [];
   this._ready = false;
-  this._isBusy = false;
-  this._isAsyncMode = aggregator.length === 3;
+  this._processing = false;
 
+  if (aggregator.length === 2) {
+    this.aggregator = function(value, mem, cb) {
+      cb(aggregator(value, mem));
+    };
+  } else {
+    this.aggregator = aggregator;
+  }
+
+  /*
   if (this._isAsyncMode) {
     this.aggregator = function(value, mem) {
       this._isBusy = true;
@@ -33,17 +41,19 @@ function Aggregator(aggregator, initial_value) {
       return new_value;
     }.bind(this);
   }
+  */
 
   if (typeof initial_value === 'function') {
-    if (initial_value.length === 0) {
-      _init.call(this, initial_value());
-    } else {
+    if (initial_value.length === 1) {
       //aync init
       initial_value(_init.bind(this));
+    } else {
+      this._init(initial_value());
     }
   } else {
-    _init.call(this, initial_value);
+    this._init(initial_value);
   }
+
 }
 
 
@@ -51,42 +61,37 @@ function Aggregator(aggregator, initial_value) {
 function _init(val) {
   this._aggregated = val;
   this._ready = true;
-  _unstack_buffer.call(this);
   this.emit('ready', this.get());
+  this._unstack();
 }
 
-function _unstack_buffer() {
-  if (!this._asyncMode) {
-    while (this._buffer.length) {
-      this._aggregated = this.aggregator(this._buffer.shift(), this._aggregated);
-    }
-  } else {
-    _unstackLoop.call(this);
-  }
+function _onAggregate(new_value) {
+  this._aggregated = new_value;
+  this._processing = false;
+  this.emit('data', new_value);
+  this._unstack();
 }
 
-function _unstackLoop() {
-  if (this._buffer.length) {
-    this.aggregator(this._buffer.shift(), this._aggregated, _unstackLoop.call(this));
+function _unstack() {
+  if (this._ready && this._buffer.length && !this._processing) {
+    this._processing = true;
+    var next = this._buffer.shift();
+    this.aggregator(next, this._aggregated, _onAggregate.bind(this));
   }
 }
 
 function aggregate(new_value) {
-  if (this._ready && !this._isBusy) {
-    if (!this._isAsyncMode) {
-      return this._aggregated = this.aggregator(new_value, this._aggregated);
-    } else {
-      this.aggregator(new_value, this._aggregated);
-    }
-  } else {
-    this._buffer.push(new_value);
-  }
+  this._buffer.push(new_value);
+  this._unstack();
 }
 
 function get() {
   return this._aggregated;
 }
 
+
+Aggregator.prototype._init = _init;
+Aggregator.prototype._unstack = _unstack;
 
 Aggregator.prototype.aggregate = aggregate;
 Aggregator.prototype.add = aggregate;
