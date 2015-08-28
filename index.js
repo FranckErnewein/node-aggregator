@@ -22,27 +22,6 @@ function Aggregator(aggregator, initial_value) {
     this.aggregator = aggregator;
   }
 
-  /*
-  if (this._isAsyncMode) {
-    this.aggregator = function(value, mem) {
-      this._isBusy = true;
-      aggregator(value, mem, function(new_value) {
-        this._aggregated = new_value;
-        this._isBusy = false;
-        this.emit('data', new_value);
-        _unstack_buffer.call(this);
-      }.bind(this));
-    }.bind(this);
-  } else {
-    this.aggregator = function(value, mem){
-      var new_value = aggregator(value, mem);
-      this._aggregated = new_value;
-      this.emit('data', new_value);
-      return new_value;
-    }.bind(this);
-  }
-  */
-
   if (typeof initial_value === 'function') {
     if (initial_value.length === 1) {
       //aync init
