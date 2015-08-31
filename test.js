@@ -6,6 +6,10 @@ describe('Aggregator', function() {
 
   function lambda() {}
 
+  function sum(v, m, cb) {
+    cb(v + m);
+  }
+
   it('should create an instance', function() {
     var agg = new Aggregator(lambda);
     expect(agg).to.be.instanceof(Aggregator);
@@ -235,9 +239,7 @@ describe('Aggregator', function() {
         Aggregator.call(this);
         this._aggregated = 0;
       }
-      Child.prototype.aggregator = function(val, mem, cb) {
-        cb(mem + val);
-      };
+      Child.prototype.aggregator = sum;
       var child = new Child();
       child.add(1);
       expect(child.get()).to.be.equal(1);
@@ -245,6 +247,97 @@ describe('Aggregator', function() {
       expect(child.get()).to.be.equal(3);
     });
 
+    it('should implement init', function() {
+      util.inherits(Child, Aggregator);
+
+      function Child() {
+        Aggregator.call(this);
+      }
+      Child.prototype.init = function(cb) {
+        cb(15);
+      };
+      Child.prototype.aggregator = sum;
+      var child = new Child();
+      expect(child.get()).to.be.equal(15);
+    });
+
+    it('should implement async init', function(done) {
+      util.inherits(Child, Aggregator);
+
+      function Child() {
+        Aggregator.call(this);
+      }
+      Child.prototype.init = function(cb) {
+        setTimeout(function() {
+          cb(15);
+        }, 15);
+      };
+      Child.prototype.aggregator = sum;
+      var child = new Child();
+      expect(child._ready).to.be.equal(false);
+      child.once('ready', function() {
+        expect(child._ready).to.be.equal(true);
+        expect(child.get()).to.be.equal(15);
+        done();
+      });
+    });
+
+    it('should implement async aggregator', function(done) {
+      util.inherits(Child, Aggregator);
+
+      function Child() {
+        Aggregator.call(this, null, 1);
+      }
+      Child.prototype.aggregator = function(v, m, cb) {
+        setTimeout(function() {
+          cb(v + m);
+        }, 10);
+      };
+      var child = new Child();
+      expect(child.get()).to.be.equal(1);
+      child.add(2);
+      child.add(3);
+      child.once('data', function() {
+        expect(child.get()).to.be.equal(3);
+        child.once('data', function() {
+          expect(child.get()).to.be.equal(6);
+          done();
+        });
+      });
+    });
+
+    it('should implement async aggregator and async init', function(done) {
+      util.inherits(Child, Aggregator);
+
+      function Child() {
+        Aggregator.call(this);
+      }
+      Child.prototype.aggregator = function(v, m, cb) {
+        setTimeout(function() {
+          cb(v + m);
+        }, 10);
+      };
+      Child.prototype.init = function(cb) {
+        setTimeout(function() {
+          cb(1);
+        }, 15);
+      };
+      var child = new Child();
+      child.add(2);
+      child.add(3);
+      child.once('ready', function() {
+        expect(child.get()).to.be.equal(1);
+        child.once('data', function() {
+          expect(child.get()).to.be.equal(3);
+          child.once('data', function() {
+            expect(child.get()).to.be.equal(6);
+            done();
+          });
+        });
+      });
+    });
+
   });
+
 
 });
