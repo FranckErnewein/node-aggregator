@@ -1,7 +1,8 @@
 #Data aggregation tool
 
-usefull to manage cache and keed updated
 [![npm version](https://badge.fury.io/js/node-aggregator.svg)](http://badge.fury.io/js/node-aggregator)
+
+usefull to manage cache and keed updated
 
 ## Example
 
