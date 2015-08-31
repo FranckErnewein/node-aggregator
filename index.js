@@ -6,36 +6,17 @@ util.inherits(Aggregator, events.EventEmitter);
 function Aggregator(aggregator, initial_value) {
   events.EventEmitter.call(this);
 
-  if (typeof aggregator !== 'function') {
-    throw new Error('aggregator is not a function');
-  }
-
   this._buffer = [];
   this._ready = false;
   this._processing = false;
 
-  if (aggregator.length === 2) {
-    this.aggregator = function(value, mem, cb) {
-      cb(aggregator(value, mem));
-    };
-  } else {
-    this.aggregator = aggregator;
-  }
-
-  if (typeof initial_value === 'function') {
-    if (initial_value.length === 1) {
-      //aync init
-      initial_value(_init.bind(this));
-    } else {
-      this._init(initial_value());
-    }
-  } else {
-    this._init(initial_value);
+  if (arguments.length > 0) {
+    factory.call(this, aggregator, initial_value);
+  }else{
+    this._init();
   }
 
 }
-
-
 
 function _init(val) {
   this._aggregated = val;
@@ -68,15 +49,51 @@ function get() {
   return this._aggregated;
 }
 
+function aggregatorNotImplemtented() {
+  throw new Error('aggregator not implemented');
+}
 
 Aggregator.prototype._init = _init;
 Aggregator.prototype._unstack = _unstack;
 
 Aggregator.prototype.aggregate = aggregate;
 Aggregator.prototype.add = aggregate;
+Aggregator.prototype.write = aggregate;
+Aggregator.prototype.aggregator = aggregatorNotImplemtented;
 
 Aggregator.prototype.value = get;
 Aggregator.prototype.get = get;
+Aggregator.prototype.read = get;
 
+function factory(aggregator, initial_value) {
+  var agg = (this instanceof Aggregator) ? this : new Aggregator();
+
+  if (typeof aggregator !== 'function') {
+    throw new Error('aggregator is not a function');
+  }
+
+  if (aggregator.length === 2) {
+    agg.aggregator = function(value, mem, cb) {
+      cb(aggregator(value, mem));
+    };
+  } else {
+    agg.aggregator = aggregator;
+  }
+
+  if (typeof initial_value === 'function') {
+    if (initial_value.length === 1) {
+      //aync init
+      initial_value(_init.bind(agg));
+    } else {
+      agg._init(initial_value());
+    }
+  } else {
+    agg._init(initial_value);
+  }
+
+  return agg;
+}
+
+Aggregator.create = factory;
 
 module.exports = Aggregator;

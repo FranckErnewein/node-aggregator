@@ -1,4 +1,5 @@
 var expect = require('chai').expect;
+var util = require('util');
 var Aggregator = require('./');
 
 describe('Aggregator', function() {
@@ -10,10 +11,22 @@ describe('Aggregator', function() {
     expect(agg).to.be.instanceof(Aggregator);
   });
 
+  it('should create an instance with factory', function() {
+    var agg = Aggregator.create(lambda);
+    expect(agg).to.be.instanceof(Aggregator);
+  });
+
   it('should throw an error when there is no aggregator function', function() {
     expect(function() {
-      new Aggregator();
+      Aggregator.create();
     }).to.throw('aggregator is not a function');
+  });
+
+  it('should throw an error if aggregator is not implemented', function() {
+    var not_impl = new Aggregator();
+    expect(function() {
+      not_impl.add(1);
+    }).to.throw('aggregator not implemented');
   });
 
   it('should aggregate a string', function() {
@@ -70,7 +83,12 @@ describe('Aggregator', function() {
     });
   });
 
-  it('should trigger `ready` with aync init', function(done) {
+  it('should be ready with sync init', function() {
+    var agg = new Aggregator(lambda, 0);
+    expect(agg._ready).to.be.equal(true);
+  });
+
+  it('should trigger `ready` with async init', function(done) {
     var agg = new Aggregator(lambda, function(init) {
       setTimeout(function() {
         init(0);
@@ -207,6 +225,27 @@ describe('Aggregator', function() {
         done();
       });
     });
+  });
+
+  describe('extend', function() {
+
+    it('should extend and instanciate', function() {
+      util.inherits(Child, Aggregator);
+
+      function Child() {
+        Aggregator.call(this);
+        this._aggregated = 0;
+      }
+      Child.prototype.aggregator = function(val, mem, cb) {
+        cb(mem + val);
+      };
+      var child = new Child();
+      child.add(1);
+      expect(child.get()).to.be.equal(1);
+      child.add(2);
+      expect(child.get()).to.be.equal(3);
+    });
+
   });
 
 });
