@@ -19,14 +19,13 @@ describe('Aggregator', function() {
   it('should throw an error when there is no aggregator function', function() {
     expect(function() {
       Aggregator.create();
-    }).to.throw('aggregator is not a function');
+    }).to.throw('aggregator is not implemented');
   });
 
   it('should throw an error if aggregator is not implemented', function() {
-    var not_impl = new Aggregator();
     expect(function() {
-      not_impl.add(1);
-    }).to.throw('aggregator not implemented');
+      new Aggregator();
+    }).to.throw('aggregator is not implemented');
   });
 
   it('should aggregate a string', function() {
